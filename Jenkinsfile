@@ -1,35 +1,51 @@
 node {
     stage('Setup Docker Environment') {
-        sh 'docker run -d --name node-container -v $(pwd):/app -w /app -p 3000:3000 node:16-buster-slim tail -f /dev/null'
+        steps {
+            sh 'docker run -d --name node-container -v $(pwd):/app -w /app -p 3000:3000 node:16-buster-slim tail -f /dev/null'
+        }
     }
 
     stage('Build') {
-        sh 'docker exec node-container npm install'
+        steps {
+            sh 'docker exec node-container npm install'
+        }
     }
 
     stage('Test') {
-        sh 'docker exec node-container ./jenkins/scripts/test.sh'
+        steps {
+            sh 'docker exec node-container ./jenkins/scripts/test.sh'
+        }
     }
 
     stage('Manual Approval') {
-        input message: 'Lanjutkan ke tahap Deploy?'
+        steps {
+            script {
+                input message: 'Lanjutkan ke tahap Deploy?'
+            }
+        }
     }
 
     stage('Deploy') {
-        sh 'docker build -t react-app .'
-        sh 'docker run -d -p 3000:3000 --name react-app-container react-app'
+        steps {
+            sh 'docker build -t react-app .'
+            sh 'docker run -d -p 3000:3000 --name react-app-container react-app'
+        }
     }
 
     stage('Wait for 1 minute') {
-        sh 'sleep 60'
-        sh 'docker stop react-app-container && docker rm react-app-container'
+        steps {
+            sh 'sleep 60'
+            sh 'docker stop react-app-container && docker rm react-app-container'
+        }
     }
 }
 
-// Pastikan container Node.js dihentikan dan dihapus setelah pipeline selesai
+// Cleanup setelah pipeline selesai
 node {
     stage('Cleanup Environment') {
-        sh 'docker stop node-container || true'
-        sh 'docker rm node-container || true'
+        steps {
+            sh 'docker stop node-container || true'
+            sh 'docker rm node-container || true'
+        }
     }
 }
