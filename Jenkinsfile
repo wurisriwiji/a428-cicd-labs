@@ -1,8 +1,10 @@
 node {
     checkout scm
-    
+
     stage('Build') {
         docker.image('node:16-buster-slim').inside {
+            sh 'rm -rf node_modules package-lock.json'
+            sh 'npm cache clean --force'
             sh 'npm install'
             sh 'npm run build'
         }
