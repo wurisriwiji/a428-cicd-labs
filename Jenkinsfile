@@ -16,12 +16,18 @@ pipeline {
                 sh './jenkins/scripts/test.sh'
             }
         }
+        stage('Manual Approval') {
+            input message: 'Lanjutkan ke tahap Deploy?'
+        }
         stage('Deploy') { 
             steps {
-                sh './jenkins/scripts/deliver.sh' 
-                input message: 'Sudah selesai menggunakan React App? (Klik "Proceed" untuk mengakhiri)' 
-                sh './jenkins/scripts/kill.sh' 
+                sh 'docker build -t react-app .'
+                sh 'docker run -d -p 3000:3000 --name react-app-container react-app'
             }
+        }
+        stage('Wait for 1 minute') {
+            sh 'sleep 60' // Jeda eksekusi selama 1 menit
+            sh 'docker stop react-app-container && docker rm react-app-container'
         }
     }
 }
