@@ -1,4 +1,6 @@
 node {
+    checkout scm
+    
     stage('Build') {
         docker.image('node:16-buster-slim').inside {
             sh 'npm install'
