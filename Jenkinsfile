@@ -1,7 +1,4 @@
 node {
-    def imageName = "react-app"
-    def containerName = "react-app-container"
-
     stage('Build') {
         docker.image('node:16-buster-slim').inside {
             sh 'npm install'
@@ -19,21 +16,14 @@ node {
     }
 
     stage('Deploy') {
-        docker.image('docker:20.10.12').inside('--privileged -v /var/run/docker.sock:/var/run/docker.sock') {
-        sh "docker build -t react-app ."
-        sh "docker run -d -p 3000:3000 --name react-app-container react-app"
-    }
-}
-
-
-    stage('Wait for 1 Minute') {
-        sh 'sleep 60'
-    }
-
-    stage('Cleanup') {
-        docker.image('docker:20.10.12').inside('--privileged -v /var/run/docker.sock:/var/run/docker.sock') {
-            sh "docker stop ${containerName} || true"
-            sh "docker rm ${containerName} || true"
+        docker.image('docker:20.10.12-dind').inside('--privileged') {
+            sh "docker build -t react-app ."
+            sh "docker run -d -p 3000:3000 --name react-app-container react-app"
         }
+    }
+
+    stage('Wait for 1 minute') {
+        sh 'sleep 60'
+        sh 'docker stop react-app-container && docker rm react-app-container'
     }
 }
