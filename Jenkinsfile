@@ -2,6 +2,7 @@ node {
     stage('Build') {
         docker.image('node:16-buster-slim').inside {
             sh 'npm install'
+            sh 'npm run build'
         }
     }
 
@@ -16,10 +17,8 @@ node {
     }
 
     stage('Deploy') {
-        docker.image('docker:20.10.12-dind').inside('--privileged') {
             sh "docker build -t react-app ."
             sh "docker run -d -p 3000:3000 --name react-app-container react-app"
-        }
     }
 
     stage('Wait for 1 minute') {
