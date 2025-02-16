@@ -1,21 +1,37 @@
 pipeline {
     agent {
         docker {
-            image 'docker:20.10-dind'
-            args '--privileged -v /var/lib/docker'
+            image 'node:16-buster-slim'
+            args '--network=host -v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
     stages {
-        stage('Setup') {
+        stage('Build') {
             steps {
-                sh 'dockerd-entrypoint.sh &'
-                sh 'sleep 10'
+                sh 'npm install'
             }
         }
-        stage('Deploy') {
+        stage('Test') {
             steps {
+                sh './jenkins/scripts/test.sh'
+            }
+        }
+        stage('Manual Approval') {
+            steps {
+                input message: 'Lanjutkan ke tahap Deploy?'
+            }
+        }
+        stage('Deploy') { 
+            steps {
+                sh 'docker version' // Cek apakah Docker tersedia
                 sh 'docker build -t react-app .'
                 sh 'docker run -d -p 3000:3000 --name react-app-container react-app'
+            }
+        }
+        stage('Wait for 1 minute') {
+            steps {
+                sh 'sleep 60'
+                sh 'docker stop react-app-container && docker rm react-app-container'
             }
         }
     }
